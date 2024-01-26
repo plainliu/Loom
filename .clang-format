@@ -1,0 +1,15 @@
+# Defines the Google style for automatic reformatting.
+# http://clang.llvm.org/docs/ClangFormatStyleOptions.html
+BasedOnStyle: Google
+Standard: c++17
+ColumnLimit: 0
+IndentWidth : 4
+
+# 不使用tab键
+UseTab : Never
+# 使用\n换行
+UseCRLF : false
+# 所有的大括号都换行并且无额外缩进
+BreakBeforeBraces: Allman
+# 允许inline的函数写在一行内
+AllowShortFunctionsOnASingleLine : Inline
