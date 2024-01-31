@@ -1,8 +1,88 @@
 ﻿#pragma once
 
+#define VKB_DEBUG
+
 #include <platform/application.h>
 
 #include <vulkan/vulkan.hpp>
+
+static uint32_t findMemoryType(vk::PhysicalDeviceMemoryProperties const& memoryProperties, uint32_t typeBits, vk::MemoryPropertyFlags requirementsMask)
+{
+    uint32_t typeIndex = uint32_t(~0);
+    for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++)
+    {
+        if ((typeBits & 1) && ((memoryProperties.memoryTypes[i].propertyFlags & requirementsMask) == requirementsMask))
+        {
+            typeIndex = i;
+            break;
+        }
+        typeBits >>= 1;
+    }
+    assert(typeIndex != uint32_t(~0));
+    return typeIndex;
+}
+
+class BufferData
+{
+public:
+    vk::Buffer                 buffer;
+    vk::DeviceMemory           deviceMemory;
+
+    static BufferData CreateBufferData(vk::PhysicalDevice const &physicalDevice,
+                          vk::Device const         &device,
+                          vk::DeviceSize            size,
+                          vk::BufferUsageFlags      usage,
+                          vk::MemoryPropertyFlags   propertyFlags = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent)
+    {
+        BufferData bufferData;
+
+        vk::BufferCreateInfo bufferInfo{};
+        bufferInfo.size = size;
+        bufferInfo.usage = usage;
+        bufferInfo.sharingMode = vk::SharingMode::eExclusive;
+
+        if (device.createBuffer(&bufferInfo, nullptr, &bufferData.buffer) != vk::Result::eSuccess)
+        {
+            throw std::runtime_error("failed to create vertex buffer!");
+        }
+
+        // alloc gpu mem
+
+        vk::MemoryRequirements memRequirements;
+        device.getBufferMemoryRequirements(bufferData.buffer, &memRequirements);
+
+        vk::MemoryAllocateInfo allocInfo{};
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex = findMemoryType(physicalDevice.getMemoryProperties(), memRequirements.memoryTypeBits, propertyFlags);
+
+        if (device.allocateMemory(&allocInfo, nullptr, &bufferData.deviceMemory) != vk::Result::eSuccess)
+        {
+            throw std::runtime_error("failed to allocate buffer memory!");
+        }
+
+        device.bindBufferMemory(bufferData.buffer, bufferData.deviceMemory, 0);
+
+        return bufferData;
+    }
+
+    void clear(const vk::Device& device)
+    {
+        if (buffer)
+            device.destroyBuffer(buffer);
+
+        if (deviceMemory)
+            device.freeMemory(deviceMemory);
+    }
+
+    template <typename DataType>
+    void upload(const vk::Device& device, std::vector<DataType> const& data)
+    {
+        size_t size = sizeof(DataType) * data.size();
+        void* dataPtr = device.mapMemory(deviceMemory, 0, size);
+        memcpy(dataPtr, data.data(), (size_t)size);
+        device.unmapMemory(deviceMemory);
+    }
+};
 
 class PeakApplication : public vkb::Application
 {
@@ -60,6 +140,8 @@ class PeakApplication : public vkb::Application
     vk::RenderPass             render_pass;            // The renderpass description.
     vk::PipelineLayout         pipeline_layout;        // The pipeline layout for resources.
     vk::Pipeline               pipeline;               // The graphics pipeline.
+    BufferData                 mVertexBuffer;
+    BufferData                 mIndexBuffer;
     vk::DebugUtilsMessengerEXT debug_utils_messenger;  // The debug utils messenger.
     std::vector<vk::Semaphore> recycled_semaphores;    // A set of semaphores that can be reused.
     std::vector<FrameData>     per_frame_data;         // A set of per-frame data.

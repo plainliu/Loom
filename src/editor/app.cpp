@@ -138,6 +138,9 @@ PeakApplication::~PeakApplication()
         device.destroySemaphore(semaphore);
     }
 
+    mVertexBuffer.clear(device);
+    mIndexBuffer.clear(device);
+
     if (pipeline)
     {
         device.destroyPipeline(pipeline);
@@ -181,6 +184,59 @@ PeakApplication::~PeakApplication()
     instance.destroy();
 }
 
+struct Vertex
+{
+    glm::vec2 pos;
+    glm::vec3 color;
+
+    static vk::VertexInputBindingDescription getBindingDescription()
+    {
+        vk::VertexInputBindingDescription bindingDescription{};
+
+        bindingDescription.binding   = 0;
+        bindingDescription.stride    = sizeof(Vertex);
+        bindingDescription.inputRate = vk::VertexInputRate::eVertex;
+
+        return bindingDescription;
+    }
+
+    static std::array<vk::VertexInputAttributeDescription, 2> getAttributeDescriptions()
+    {
+        std::array<vk::VertexInputAttributeDescription, 2> attributeDescriptions{};
+
+        attributeDescriptions[0].binding  = 0;
+        attributeDescriptions[0].location = 0;
+        attributeDescriptions[0].format   = vk::Format::eR32G32Sfloat;  // vec2
+        attributeDescriptions[0].offset   = offsetof(Vertex, pos);
+
+        attributeDescriptions[1].binding  = 0;
+        attributeDescriptions[1].location = 1;
+        attributeDescriptions[1].format   = vk::Format::eR32G32B32Sfloat;  // vec3
+        attributeDescriptions[1].offset   = offsetof(Vertex, color);
+
+        return attributeDescriptions;
+    }
+};
+
+const std::vector<Vertex> triangleVertices = {
+    { {0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}}, // 右下
+    {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}, // 左下
+    {{0.0f, -0.5f}, {0.0f, 1.0f, 0.0f}}, // 上方
+};
+
+const std::vector<Vertex> vertices = {
+    { {0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}}, // 右上角
+    {  {0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}}, // 右下角
+    { {-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}, // 左下角
+    {{-0.5f, -0.5f}, {0.0f, 1.0f, 1.0f}}  // 左上角
+};
+
+const std::vector<uint32_t> indeies =
+{
+    0, 1, 3,
+    1, 2, 3
+};
+
 bool PeakApplication::prepare(const vkb::ApplicationOptions &options)
 {
     if (Application::prepare(options))
@@ -206,6 +262,12 @@ bool PeakApplication::prepare(const vkb::ApplicationOptions &options)
 
         // Create the necessary objects for rendering.
         render_pass = create_render_pass();
+
+        mVertexBuffer = BufferData::CreateBufferData(gpu, device, sizeof(vertices[0]) * vertices.size(), vk::BufferUsageFlagBits::eVertexBuffer);
+        mVertexBuffer.upload(device, vertices);
+
+        mIndexBuffer = BufferData::CreateBufferData(gpu, device, sizeof(indeies[0]) * indeies.size(), vk::BufferUsageFlagBits::eIndexBuffer);
+        mIndexBuffer.upload(device, indeies);
 
         // Create a blank pipeline layout.
         // We are not binding any resources to the pipeline in this first sample.
@@ -367,6 +429,14 @@ vk::Pipeline PeakApplication::create_graphics_pipeline()
 
     vk::PipelineVertexInputStateCreateInfo vertex_input;
 
+    auto bindingDescription = Vertex::getBindingDescription();
+    auto attributeDescriptions = Vertex::getAttributeDescriptions();
+
+    vertex_input.vertexBindingDescriptionCount = 1;
+    vertex_input.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+    vertex_input.pVertexBindingDescriptions = &bindingDescription;
+    vertex_input.pVertexAttributeDescriptions = attributeDescriptions.data();
+
     // Our attachment will write to all color channels, but no blending is enabled.
     vk::PipelineColorBlendAttachmentState blend_attachment;
     blend_attachment.colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
@@ -382,7 +452,7 @@ vk::Pipeline PeakApplication::create_graphics_pipeline()
                                                                   0,
                                                                   vk::PolygonMode::eFill,
                                                                   vk::CullModeFlagBits::eBack,
-                                                                  vk::FrontFace::eClockwise,
+                                                                  vk::FrontFace::eClockwise,  // pk: default CounterClockwise in OpenGL
                                                                   {blend_attachment},
                                                                   depth_stencil,
                                                                   pipeline_layout,  // We need to specify the pipeline layout
@@ -741,7 +811,7 @@ void PeakApplication::render(uint32_t swapchain_index)
 
     // We will only submit this once before it's recycled.
     vk::CommandBufferBeginInfo begin_info(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-    // Begin command recording
+
     cmd.begin(begin_info);
 
     // Set clear color values.
@@ -760,18 +830,23 @@ void PeakApplication::render(uint32_t swapchain_index)
 
     cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline);
 
+    vk::Buffer vertexBuffers[] = { mVertexBuffer.buffer };
+    vk::DeviceSize offsets[] = { 0 };
+    cmd.bindVertexBuffers(0, 1, vertexBuffers, offsets);
+    cmd.bindIndexBuffer(mIndexBuffer.buffer, 0, vk::IndexType::eUint32);
+
     // Set viewport & scissor dynamically
     vk::Viewport vp(0.0f, 0.0f, static_cast<float>(swapchain_data.extent.width), static_cast<float>(swapchain_data.extent.height), 0.0f, 1.0f);
     cmd.setViewport(0, vp);
     vk::Rect2D scissor({0, 0}, {swapchain_data.extent.width, swapchain_data.extent.height});
     cmd.setScissor(0, scissor);
 
-    // Draw three vertices with one instance.
-    cmd.draw(3, 1, 0, 0);
+    // Draw vertices with one instance.
+    //cmd.draw(3, 1, 0, 0);
+    cmd.drawIndexed(indeies.size(), 1, 0, 0, 0);
 
     cmd.endRenderPass();
 
-    // Complete the command buffer.
     cmd.end();
 
     // Submit it to the queue with a release semaphore.
