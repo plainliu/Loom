@@ -1,7 +1,7 @@
 # Defines the Google style for automatic reformatting.
 # http://clang.llvm.org/docs/ClangFormatStyleOptions.html
 BasedOnStyle: Google
-Standard: c++17
+Standard: c++20
 ColumnLimit: 0
 IndentWidth : 4
 
@@ -13,3 +13,13 @@ UseCRLF : false
 BreakBeforeBraces: Allman
 # 允许inline的函数写在一行内
 AllowShortFunctionsOnASingleLine : Inline
+# 数组初始化右对齐
+AlignArrayOfStructures : Right
+# 对其赋值
+AlignConsecutiveAssignments : Consecutive 
+# 对其声明的变量
+AlignConsecutiveDeclarations : Consecutive
+# 允许单行swich case
+AllowShortCaseLabelsOnASingleLine : true
+# 换行\右对齐
+AlignEscapedNewlines : Right

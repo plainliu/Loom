@@ -1,29 +1,55 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.24)
 
 project(Peak)
 
 SET(CMAKE_CXX_STANDARD 20)
 
-add_executable(Peak src/main.cpp)
+add_definitions(-DROOT_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
-find_package(Vulkan REQUIRED)
+set(PEAK_SOURCE_FILES_PATH "${CMAKE_CURRENT_SOURCE_DIR}/src")
+set(PEAK_SHADER_FILES_PATH "${CMAKE_CURRENT_SOURCE_DIR}/shaders")
 
-add_subdirectory(ThirdParty/Vulkan-HPP/glfw)
-add_subdirectory(ThirdParty/Vulkan-HPP/glm)
-add_subdirectory(ThirdParty/Vulkan-HPP/glslang)
+file(GLOB_RECURSE PEAK_HEAD_FILES
+    ${PEAK_SOURCE_FILES_PATH}/*.h
+    ${PEAK_SOURCE_FILES_PATH}/*.hpp
+    ${PEAK_SOURCE_FILES_PATH}/*.inl
+)
+file(GLOB_RECURSE PEAK_SOURCE_FILES
+    ${PEAK_SOURCE_FILES_PATH}/*.h
+    ${PEAK_SOURCE_FILES_PATH}/*.hpp
+    ${PEAK_SOURCE_FILES_PATH}/*.inl
+    ${PEAK_SOURCE_FILES_PATH}/*.cpp
+    ${PEAK_SOURCE_FILES_PATH}/*.imp
+)
+file(GLOB_RECURSE PEAK_SHADERS_FILES
+    ${PEAK_SHADER_FILES_PATH}/*.vert
+    ${PEAK_SHADER_FILES_PATH}/*.frag
+)
 
-# Vulkan-HPP utils
-add_subdirectory(ThirdParty/Vulkan-HPP)
-add_subdirectory(ThirdParty/Vulkan-HPP/samples/utils)
-add_subdirectory(ThirdParty/Vulkan-HPP/RAII_samples/utils)
+source_group(TREE ${PEAK_SOURCE_FILES_PATH} FILES ${PEAK_HEAD_FILES})
+source_group(TREE ${PEAK_SOURCE_FILES_PATH} FILES ${PEAK_SOURCE_FILES})
+source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${PEAK_SHADERS_FILES})
+
+add_executable(Peak
+    ${PEAK_HEAD_FILES}
+    ${PEAK_SOURCE_FILES}
+    ${PEAK_SHADERS_FILES}
+)
+set_property(TARGET Peak PROPERTY COMPILE_WARNING_AS_ERROR ON)
+
+option(VKB_BUILD_SAMPLES "" OFF)
+add_subdirectory(ThirdParty/Vulkan-Samples)
 
 target_include_directories(Peak
     PUBLIC
-        ThirdParty/Vulkan-HPP/glfw/include
-        ThirdParty/Vulkan-HPP/RAII_samples/utils
+        ${PEAK_SOURCE_FILES_PATH}
+        ThirdParty/Vulkan-Samples/framework
+        ThirdParty/Vulkan-Samples/app
 )
-target_link_libraries(Peak PRIVATE
-    Vulkan::Vulkan
-    glfw
-    RAII_utils
+
+target_link_libraries(Peak
+    PRIVATE
+        framework
+        apps
+        plugins
 )
