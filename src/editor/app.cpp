@@ -898,7 +898,7 @@ void PeakApplication::select_physical_device_and_surface()
             vk::Bool32 supports_present = gpu.getSurfaceSupportKHR(j, surface);
 
             // Find a queue family which supports graphics and presentation.
-            if ((queue_family_properties[j].queueFlags & vk::QueueFlagBits::eGraphics) && supports_present)
+            if ((queue_family_properties[j].queueFlags & vk::QueueFlagBits::eGraphics) && (queue_family_properties[j].queueFlags & vk::QueueFlagBits::eTransfer) && supports_present)
             {
                 graphics_queue_index       = j;
                 found_graphics_queue_index = true;

@@ -46,8 +46,6 @@ public:
             throw std::runtime_error("failed to create vertex buffer!");
         }
 
-        // alloc gpu mem
-
         vk::MemoryRequirements memRequirements;
         device.getBufferMemoryRequirements(bufferData.buffer, &memRequirements);
 
@@ -55,6 +53,7 @@ public:
         allocInfo.allocationSize = memRequirements.size;
         allocInfo.memoryTypeIndex = findMemoryType(physicalDevice.getMemoryProperties(), memRequirements.memoryTypeBits, propertyFlags);
 
+        // TODO use VMA
         if (device.allocateMemory(&allocInfo, nullptr, &bufferData.deviceMemory) != vk::Result::eSuccess)
         {
             throw std::runtime_error("failed to allocate buffer memory!");
@@ -77,6 +76,7 @@ public:
     template <typename DataType>
     void upload(const vk::Device& device, std::vector<DataType> const& data)
     {
+        // TODO use staging buffer
         size_t size = sizeof(DataType) * data.size();
         void* dataPtr = device.mapMemory(deviceMemory, 0, size);
         memcpy(dataPtr, data.data(), (size_t)size);
