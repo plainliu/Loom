@@ -115,11 +115,11 @@ std::vector<const char *> get_optimal_validation_layers(const std::vector<vk::La
     return {};
 }
 
-PeakApplication::PeakApplication()
+LoomApplication::LoomApplication()
 {
 }
 
-PeakApplication::~PeakApplication()
+LoomApplication::~LoomApplication()
 {
     // Don't release anything until the GPU is completely idle.
     device.waitIdle();
@@ -237,7 +237,7 @@ const std::vector<uint32_t> indeies =
     1, 2, 3
 };
 
-bool PeakApplication::prepare(const vkb::ApplicationOptions &options)
+bool LoomApplication::prepare(const vkb::ApplicationOptions &options)
 {
     if (Application::prepare(options))
     {
@@ -281,7 +281,7 @@ bool PeakApplication::prepare(const vkb::ApplicationOptions &options)
     return true;
 }
 
-void PeakApplication::update(float delta_time)
+void LoomApplication::update(float delta_time)
 {
     vk::Result res;
     uint32_t   index;
@@ -317,7 +317,7 @@ void PeakApplication::update(float delta_time)
     }
 }
 
-bool PeakApplication::resize(const uint32_t, const uint32_t)
+bool LoomApplication::resize(const uint32_t, const uint32_t)
 {
     if (!device)
     {
@@ -345,7 +345,7 @@ bool PeakApplication::resize(const uint32_t, const uint32_t)
  * @param[out] image The swapchain index for the acquired image.
  * @returns Vulkan result code
  */
-std::pair<vk::Result, uint32_t> PeakApplication::acquire_next_image()
+std::pair<vk::Result, uint32_t> LoomApplication::acquire_next_image()
 {
     vk::Semaphore acquire_semaphore;
     if (recycled_semaphores.empty())
@@ -400,7 +400,7 @@ std::pair<vk::Result, uint32_t> PeakApplication::acquire_next_image()
     return {vk::Result::eSuccess, image};
 }
 
-vk::Device PeakApplication::create_device(const std::vector<const char *> &required_device_extensions)
+vk::Device LoomApplication::create_device(const std::vector<const char *> &required_device_extensions)
 {
     std::vector<vk::ExtensionProperties> device_extensions = gpu.enumerateDeviceExtensionProperties();
 
@@ -421,7 +421,7 @@ vk::Device PeakApplication::create_device(const std::vector<const char *> &requi
     return device;
 }
 
-vk::Pipeline PeakApplication::create_graphics_pipeline()
+vk::Pipeline LoomApplication::create_graphics_pipeline()
 {
     std::vector<vk::PipelineShaderStageCreateInfo> shader_stages{
         vk::PipelineShaderStageCreateInfo({}, vk::ShaderStageFlagBits::eVertex, create_shader_module("triangle.vert"), "main"),
@@ -465,7 +465,7 @@ vk::Pipeline PeakApplication::create_graphics_pipeline()
     return pipeline;
 }
 
-vk::ImageView PeakApplication::create_image_view(vk::Image image)
+vk::ImageView LoomApplication::create_image_view(vk::Image image)
 {
     vk::ImageViewCreateInfo image_view_create_info({},
                                                    image,
@@ -476,7 +476,7 @@ vk::ImageView PeakApplication::create_image_view(vk::Image image)
     return device.createImageView(image_view_create_info);
 }
 
-vk::Instance PeakApplication::create_instance(std::vector<const char *> const &required_instance_extensions, std::vector<const char *> const &required_validation_layers)
+vk::Instance LoomApplication::create_instance(std::vector<const char *> const &required_instance_extensions, std::vector<const char *> const &required_validation_layers)
 {
     static vk::DynamicLoader  dl;
     PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr = dl.getProcAddress<PFN_vkGetInstanceProcAddr>("vkGetInstanceProcAddr");
@@ -577,7 +577,7 @@ vk::Instance PeakApplication::create_instance(std::vector<const char *> const &r
     return instance;
 }
 
-vk::RenderPass PeakApplication::create_render_pass()
+vk::RenderPass LoomApplication::create_render_pass()
 {
     vk::AttachmentDescription attachment({},
                                          swapchain_data.format,            // Backbuffer format
@@ -623,7 +623,7 @@ vk::RenderPass PeakApplication::create_render_pass()
  * @param path The path for the shader (relative to the assets directory).
  * @returns A vk::ShaderModule handle. Aborts execution if shader creation fails.
  */
-vk::ShaderModule PeakApplication::create_shader_module(const char *path)
+vk::ShaderModule LoomApplication::create_shader_module(const char *path)
 {
     static const std::map<std::string, vk::ShaderStageFlagBits> shader_stage_map = {
         {"comp",                vk::ShaderStageFlagBits::eCompute},
@@ -661,7 +661,7 @@ vk::ShaderModule PeakApplication::create_shader_module(const char *path)
 }
 
 vk::SwapchainKHR
-PeakApplication::create_swapchain(vk::Extent2D const &swapchain_extent, vk::SurfaceFormatKHR surface_format, vk::SwapchainKHR old_swapchain)
+LoomApplication::create_swapchain(vk::Extent2D const &swapchain_extent, vk::SurfaceFormatKHR surface_format, vk::SwapchainKHR old_swapchain)
 {
     vk::SurfaceCapabilitiesKHR surface_properties = gpu.getSurfaceCapabilitiesKHR(surface);
 
@@ -723,7 +723,7 @@ PeakApplication::create_swapchain(vk::Extent2D const &swapchain_extent, vk::Surf
 /**
  * @brief Initializes the Vulkan framebuffers.
  */
-void PeakApplication::init_framebuffers()
+void LoomApplication::init_framebuffers()
 {
     assert(swapchain_data.framebuffers.empty());
 
@@ -738,7 +738,7 @@ void PeakApplication::init_framebuffers()
 /**
  * @brief Initializes the Vulkan swapchain.
  */
-void PeakApplication::init_swapchain()
+void LoomApplication::init_swapchain()
 {
     vk::SurfaceCapabilitiesKHR surface_properties = gpu.getSurfaceCapabilitiesKHR(surface);
 
@@ -801,7 +801,7 @@ void PeakApplication::init_swapchain()
  * @brief Render to the specified swapchain image.
  * @param swapchain_index The swapchain index for the image being rendered.
  */
-void PeakApplication::render(uint32_t swapchain_index)
+void LoomApplication::render(uint32_t swapchain_index)
 {
     // Render to this framebuffer.
     vk::Framebuffer framebuffer = swapchain_data.framebuffers[swapchain_index];
@@ -866,7 +866,7 @@ void PeakApplication::render(uint32_t swapchain_index)
 /**
  * @brief Select a physical device.
  */
-void PeakApplication::select_physical_device_and_surface()
+void LoomApplication::select_physical_device_and_surface()
 {
     std::vector<vk::PhysicalDevice> gpus = instance.enumeratePhysicalDevices();
 
@@ -916,7 +916,7 @@ void PeakApplication::select_physical_device_and_surface()
 /**
  * @brief Tears down the framebuffers. If our swapchain changes, we will call this, and create a new swapchain.
  */
-void PeakApplication::teardown_framebuffers()
+void LoomApplication::teardown_framebuffers()
 {
     // Wait until device is idle before teardown.
     queue.waitIdle();
@@ -933,7 +933,7 @@ void PeakApplication::teardown_framebuffers()
  * @brief Tears down the frame data.
  * @param per_frame_data The data of a frame.
  */
-void PeakApplication::teardown_per_frame(FrameData &per_frame_data)
+void LoomApplication::teardown_per_frame(FrameData &per_frame_data)
 {
     if (per_frame_data.queue_submit_fence)
     {
@@ -966,7 +966,7 @@ void PeakApplication::teardown_per_frame(FrameData &per_frame_data)
     }
 }
 
-std::unique_ptr<vkb::Application> create_peak_app()
+std::unique_ptr<vkb::Application> create_loom_app()
 {
-    return std::make_unique<PeakApplication>();
+    return std::make_unique<LoomApplication>();
 }

@@ -84,7 +84,7 @@ public:
     }
 };
 
-class PeakApplication : public vkb::Application
+class LoomApplication : public vkb::Application
 {
     struct SwapchainData
     {
@@ -105,8 +105,8 @@ class PeakApplication : public vkb::Application
     };
 
    public:
-    PeakApplication();
-    virtual ~PeakApplication();
+    LoomApplication();
+    virtual ~LoomApplication();
 
    private:
     // from vkb::Application
@@ -152,9 +152,9 @@ class PeakApplication : public vkb::Application
 };
 
 // #include <hpp_api_vulkan_sample.h>
-// class PeakApplication2 : public HPPApiVulkanSample
+// class LoomApplication2 : public HPPApiVulkanSample
 //{
 //
 // };
 
-std::unique_ptr<vkb::Application> create_peak_app();
+std::unique_ptr<vkb::Application> create_loom_app();

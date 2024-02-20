@@ -29,37 +29,37 @@
 #include <filesystem>
 
 #include "plugins/start_sample/start_sample.h"
-using PeakStartSampleTags = vkb::PluginBase<vkb::tags::Entrypoint>;
-class PeakSample : public PeakStartSampleTags
+using LoomStartSampleTags = vkb::PluginBase<vkb::tags::Entrypoint>;
+class LoomSample : public LoomStartSampleTags
 {
-	using Super = PeakStartSampleTags;
+	using Super = LoomStartSampleTags;
 public:
-	PeakSample();
+	LoomSample();
 
-	virtual ~PeakSample() = default;
+	virtual ~LoomSample() = default;
 
 	virtual bool is_active(const vkb::CommandParser& parser) override;
 
 	virtual void init(const vkb::CommandParser& parser) override;
 };
 
-PeakSample::PeakSample() : Super("Peak", "Peak Engine Plugin")
+LoomSample::LoomSample() : Super("Loom", "Loom Engine Plugin")
 {
 }
 
-bool PeakSample::is_active(const vkb::CommandParser& parser)
+bool LoomSample::is_active(const vkb::CommandParser& parser)
 {
 	return true;
 }
 
-void PeakSample::init(const vkb::CommandParser& parser)
+void LoomSample::init(const vkb::CommandParser& parser)
 {
 	{
 		// Launch
-		static apps::AppInfo appInfo = {"Peak",  create_peak_app};
+		static apps::AppInfo appInfo = {"Loom",  create_loom_app};
 		{
 			vkb::Window::OptionalProperties properties;
-			std::string                     title = "Peak";
+			std::string                     title = "Loom";
 			properties.title = title;
 			platform->set_window_properties(properties);
 			platform->request_application(&appInfo);
@@ -85,7 +85,7 @@ CUSTOM_MAIN(context)
 
 	std::filesystem::current_path(std::filesystem::path(ROOT_SOURCE_DIR));
 
-	PeakSample a;
+	LoomSample a;
 
 	auto&& ptrs = plugins::get_all();
 	ptrs.push_back(&a);
